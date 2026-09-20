@@ -12,7 +12,7 @@ services:
       - key: NODE_VERSION
         value: 22.16.0
       - key: CHAT_PASSWORD
-        sync: mariaakiki20057
+        sync: MySuperChat123456
       - key: OLLAMA_API_KEY
         sync: 1d6712e726e84c2da315a803de3a36c5.a1fusMTj-E5uE0MYC115jC40
       - key: OLLAMA_MODEL
