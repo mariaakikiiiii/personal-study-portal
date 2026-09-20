@@ -1,81 +1,18 @@
-// Floating Chat Toggle Logic
-const toggleBtn = document.getElementById('ai-floating-toggle-btn');
-const chatBox = document.getElementById('ai-chat-box');
-const closeBtn = document.getElementById('ai-close-btn');
-const sendBtn = document.getElementById('ai-send-btn');
-const chatInput = document.getElementById('ai-chat-input');
-const chatMessages = document.getElementById('ai-chat-messages');
-const newChatBtn = document.getElementById('ai-new-chat-btn');
-
-if (toggleBtn && chatBox) {
-  toggleBtn.addEventListener('click', () => {
-    chatBox.classList.toggle('hidden');
-  });
-}
-
-if (closeBtn && chatBox) {
-  closeBtn.addEventListener('click', () => {
-    chatBox.classList.add('hidden');
-  });
-}
-
-if (newChatBtn && chatMessages) {
-  newChatBtn.addEventListener('click', () => {
-    chatMessages.innerHTML = '<div class="ai-msg bot">Started a new chat session. How can I assist?</div>';
-  });
-}
-
-function handleSendMessage() {
-  const text = chatInput.value.trim();
-  if (!text) return;
-
-  // Append user message
-  const userMsg = document.createElement('div');
-  userMsg.className = 'ai-msg user';
-  userMsg.textContent = text;
-  chatMessages.appendChild(userMsg);
-
-  chatInput.value = '';
-  chatMessages.scrollTop = chatMessages.scrollHeight;
-
-  // Simulate automated response or connection to backend
-  setTimeout(() => {
-    const botMsg = document.createElement('div');
-    botMsg.className = 'ai-msg bot';
-    botMsg.textContent = "I'm connected to your backend assistant pipeline!";
-    chatMessages.appendChild(botMsg);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-  }, 600);
-}
-
-if (sendBtn && chatInput) {
-  sendBtn.addEventListener('click', handleSendMessage);
-  chatInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
-  });
-}
-
-// Course dialog triggers
-const courseCards = document.querySelectorAll('.course-card');
-const courseDialog = document.getElementById('course-dialog');
-const courseTitle = document.getElementById('course-title');
-const closeDialogBtn = document.getElementById('close-dialog');
-
-courseCards.forEach(card => {
-  card.addEventListener('click', () => {
-    const title = card.getAttribute('data-course');
-    if (courseTitle && courseDialog) {
-      courseTitle.textContent = title;
-      courseDialog.showModal();
-    }
-  });
-});
-
-if (closeDialogBtn && courseDialog) {
-  closeDialogBtn.addEventListener('click', () => {
-    courseDialog.close();
-  });
-}
+const $=id=>document.getElementById(id);
+const courses=[{id:'GEL474',number:'10787',tone:''},{id:'GEL521',number:'10799',tone:'gray'},{id:'GIN400',number:'11089',tone:'gold'}];
+let starred=new Set();try{starred=new Set(JSON.parse(localStorage.getItem('study-stars')||'[]'));}catch{}
+function draw(){const list=courses.filter(c=>(`${c.id} ${c.number}`.toLowerCase().includes($('search').value.toLowerCase()))&&($('status').value!=='star'||starred.has(c.id))).sort((a,b)=>a.id.localeCompare(b.id)*($('sort').value==='desc'?-1:1));$('courses').replaceChildren();$('courses').className='courses '+($('layout').value==='list'?'list':'');$('empty').hidden=!!list.length;for(const c of list){const card=document.createElement('article');card.className='course';card.innerHTML=`<div class="art ${c.tone}"></div><div class="course-body"><span class="semester">FALL 2026-2027</span><button class="course-name">202710 - ${c.id} - ${c.number}</button><div class="course-bottom"><span>In progress</span><button class="star" aria-label="Star ${c.id}" aria-pressed="${starred.has(c.id)}">${starred.has(c.id)?'★':'☆'}</button></div></div>`;card.querySelector('.star').onclick=()=>{starred.has(c.id)?starred.delete(c.id):starred.add(c.id);try{localStorage.setItem('study-stars',JSON.stringify([...starred]));}catch{}draw();};card.querySelector('.course-name').onclick=()=>{$('course-title').textContent=c.id+' · Personal course';$('course-dialog').showModal();};$('courses').append(card);}}
+for(const id of ['search','status','sort','layout'])$(id).addEventListener('input',draw);draw();
+document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-view]').forEach(x=>x.classList.toggle('active',x===b));$('status').value='all';$('search').value='';draw();document.querySelector('.overview').scrollIntoView({behavior:'smooth'});});
+async function api(url,body){const r=await fetch(url,{method:body===undefined?'GET':'POST',headers:body===undefined?{}:{'X-Study-Request':'1',...(body instanceof FormData?{}:{'Content-Type':'application/json'})},body:body===undefined?undefined:body instanceof FormData?body:JSON.stringify(body)});const d=await r.json();if(!r.ok){if(r.status===401&&url!=='/api/login')showAuth(false);throw new Error(d.error||'Request failed.');}return d;}
+let busy=false;function showAuth(on){$('login').hidden=on;$('conversation').hidden=!on;if(!on){$('messages').replaceChildren();$('question').value='';$('files').value='';$('file-list').textContent='';}}
+async function openChat(){$('chat').showModal();$('login-error').textContent='';try{const s=await api('/api/session');showAuth(s.authenticated);if(s.authenticated&&!busy)await api('/api/reset',{});}catch(e){$('login-error').textContent=e.message;}}
+// Reopening the dialog keeps the current conversation; reset only once after a page reload.
+let opened=false;async function open(){if(opened){$('chat').showModal();return;}opened=true;await openChat();}
+$('open-chat').onclick=open;$('side-chat').onclick=open;$('close-chat').onclick=()=>$('chat').close();$('course-close').onclick=()=>$('course-dialog').close();$('course-ai').onclick=()=>{$('course-dialog').close();open();};
+$('login').onsubmit=async e=>{e.preventDefault();const b=e.submitter;b.disabled=true;$('login-error').textContent='';try{await api('/api/login',{password:$('password').value});$('password').value='';showAuth(true);$('question').focus();}catch(e){$('login-error').textContent=e.message;}finally{b.disabled=false;}};
+$('logout').onclick=async()=>{try{await api('/api/logout',{});showAuth(false);}catch(e){$('chat-error').textContent=e.message;}};
+$('new-chat').onclick=async()=>{try{await api('/api/reset',{});$('messages').replaceChildren();$('chat-error').textContent='';}catch(e){$('chat-error').textContent=e.message;}};
+$('files').onchange=()=>{$('file-list').textContent=[...$('files').files].map(f=>f.name).join(' · ');};
+function bubble(who,text){$('messages').querySelector('.welcome')?.remove();const p=document.createElement('div');p.className='message '+(who==='You'?'user':'');const label=document.createElement('strong');label.textContent=who;p.append(label,document.createTextNode(text));$('messages').append(p);p.scrollIntoView({block:'nearest'});return p;}
+$('composer').onsubmit=async e=>{e.preventDefault();if(busy)return;const text=$('question').value.trim(),files=[...$('files').files];$('chat-error').textContent='';if(!text&&!files.length)return;if(files.length>3||files.some(f=>f.size>5*1024*1024)){$('chat-error').textContent='Choose up to 3 files, each under 5 MB.';return;}busy=true;for(const id of ['send','logout','new-chat'])$(id).disabled=true;const user=bubble('You',text+(files.length?'\n📎 '+files.map(f=>f.name).join(', '):''));const pending=bubble('Assistant','Thinking…');const form=new FormData();form.append('message',text);files.forEach(f=>form.append('files',f));try{const d=await api('/api/chat',form);pending.remove();bubble('Assistant',d.answer);$('question').value='';$('files').value='';$('file-list').textContent='';}catch(e){pending.remove();user.remove();$('chat-error').textContent=e.message;}finally{busy=false;for(const id of ['send','logout','new-chat'])$(id).disabled=false;}};
