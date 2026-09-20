@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: personal-study-portal
+    runtime: node
+    plan: free
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: 22.16.0
+      - key: CHAT_PASSWORD
+        sync: mariaakiki20057
+      - key: OLLAMA_API_KEY
+        sync: 1d6712e726e84c2da315a803de3a36c5.a1fusMTj-E5uE0MYC115jC40
+      - key: OLLAMA_MODEL
+        value: gemma4:31b
